@@ -104,11 +104,68 @@
         .required {
             color: #d13438;
         }
+        .alert {
+            padding: 12px 16px;
+            border-radius: 4px;
+            margin: 10px 0;
+            border-left: 4px solid;
+            font-size: 14px;
+        }
+        .alert-error {
+            background-color: #f8d7da;
+            border-color: #dc3545;
+            color: #721c24;
+        }
+        .alert-warning {
+            background-color: #fff3cd;
+            border-color: #ffc107;
+            color: #856404;
+        }
+        .alert-success {
+            background-color: #d4edda;
+            border-color: #28a745;
+            color: #155724;
+        }
+        .alert .close-btn {
+            float: right;
+            background: none;
+            border: none;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            color: inherit;
+            opacity: 0.7;
+        }
+        .alert .close-btn:hover {
+            opacity: 1;
+        }
+        .copy-button {
+            position: relative;
+            margin-left: 10px;
+        }
+        .copy-success {
+            position: absolute;
+            top: -30px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #28a745;
+            color: white;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+        .copy-success.show {
+            opacity: 1;
+        }
     </style>
 </head>
 <body>
     <div class="container">
         <h1>🚀 Azure Ollama VM Configuration Generator</h1>
+        
+        <div id="alertContainer"></div>
         
         <form id="configForm">
             <!-- Basic Configuration -->
@@ -251,11 +308,17 @@
             <div class="deployment-instructions">
                 <h5>1. Create Resource Group (if needed)</h5>
                 <div class="json-output" id="createRgCommand"></div>
-                <button type="button" class="btn btn-secondary" onclick="copyToClipboard(document.getElementById('createRgCommand').textContent)">Copy Command</button>
+                <div class="copy-button">
+                    <button type="button" class="btn btn-secondary" onclick="copyCommand('createRgCommand')">Copy Command</button>
+                    <div class="copy-success" id="createRgCopySuccess">Copied!</div>
+                </div>
                 
                 <h5>2. Deploy the VM</h5>
                 <div class="json-output" id="deployCommand"></div>
-                <button type="button" class="btn btn-secondary" onclick="copyToClipboard(document.getElementById('deployCommand').textContent)">Copy Command</button>
+                <div class="copy-button">
+                    <button type="button" class="btn btn-secondary" onclick="copyCommand('deployCommand')">Copy Command</button>
+                    <div class="copy-success" id="deployCopySuccess">Copied!</div>
+                </div>
                 
                 <div class="help-text" style="margin-top: 15px; padding: 10px; background-color: #e3f2fd; border-left: 4px solid #2196f3;">
                     <strong>Security Note:</strong> The admin password is provided directly in the deployment command for security. 
@@ -266,17 +329,92 @@
     </div>
 
     <script>
+        function showAlert(message, type) {
+            const alertContainer = document.getElementById('alertContainer');
+            const alertDiv = document.createElement('div');
+            alertDiv.className = `alert alert-${type}`;
+            alertDiv.innerHTML = `
+                ${message}
+                <button class="close-btn" onclick="this.parentElement.remove()">&times;</button>
+            `;
+            alertContainer.appendChild(alertDiv);
+            
+            // Auto-remove after 5 seconds for success alerts
+            if (type === 'success') {
+                setTimeout(() => {
+                    if (alertDiv.parentElement) {
+                        alertDiv.remove();
+                    }
+                }, 5000);
+            }
+        }
+
+        function validatePassword(password) {
+            const minLength = 12;
+            const hasUpper = /[A-Z]/.test(password);
+            const hasLower = /[a-z]/.test(password);
+            const hasNumber = /\d/.test(password);
+            const hasSpecial = /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password);
+            
+            if (password.length < minLength) {
+                return `Password must be at least ${minLength} characters long`;
+            }
+            if (!hasUpper) {
+                return "Password must contain at least one uppercase letter";
+            }
+            if (!hasLower) {
+                return "Password must contain at least one lowercase letter";
+            }
+            if (!hasNumber) {
+                return "Password must contain at least one number";
+            }
+            if (!hasSpecial) {
+                return "Password must contain at least one special character";
+            }
+            return null;
+        }
+
         function generateConfigs() {
+            // Clear previous alerts
+            document.getElementById('alertContainer').innerHTML = '';
+            
             const form = document.getElementById('configForm');
             const formData = new FormData(form);
             
             // Validate required fields
-            const requiredFields = ['vmName', 'location', 'adminUsername', 'adminPassword', 'virtualNetworkId', 'subnetName', 'resourceGroup'];
-            for (let field of requiredFields) {
-                if (!formData.get(field)) {
-                    alert(`Please fill in the required field: ${field}`);
+            const requiredFields = [
+                {field: 'vmName', label: 'VM Name'},
+                {field: 'location', label: 'Azure Region'},
+                {field: 'adminUsername', label: 'Admin Username'},
+                {field: 'adminPassword', label: 'Admin Password'},
+                {field: 'virtualNetworkId', label: 'Virtual Network Resource ID'},
+                {field: 'subnetName', label: 'Subnet Name'},
+                {field: 'resourceGroup', label: 'Resource Group Name'}
+            ];
+            
+            for (let {field, label} of requiredFields) {
+                if (!formData.get(field) || formData.get(field).trim() === '') {
+                    showAlert(`❌ Please fill in the required field: <strong>${label}</strong>`, 'error');
+                    document.getElementById(field).focus();
                     return;
                 }
+            }
+
+            // Validate password strength
+            const password = formData.get('adminPassword');
+            const passwordError = validatePassword(password);
+            if (passwordError) {
+                showAlert(`❌ Password validation failed: ${passwordError}`, 'error');
+                document.getElementById('adminPassword').focus();
+                return;
+            }
+
+            // Validate Virtual Network ID format
+            const vnetId = formData.get('virtualNetworkId');
+            if (!vnetId.includes('/subscriptions/') || !vnetId.includes('/virtualNetworks/')) {
+                showAlert('❌ Virtual Network ID must be a valid Azure resource ID (e.g., /subscriptions/.../virtualNetworks/...)', 'error');
+                document.getElementById('virtualNetworkId').focus();
+                return;
             }
 
             const config = {
@@ -338,11 +476,14 @@ az deployment group create \\
             document.getElementById('createRgCommand').textContent = createRgCmd;
             document.getElementById('deployCommand').textContent = deployCmd;
             document.getElementById('outputSection').style.display = 'block';
+            
+            showAlert('✅ Configuration files generated successfully! You can now copy the deployment commands below.', 'success');
         }
 
         function resetForm() {
             document.getElementById('configForm').reset();
             document.getElementById('outputSection').style.display = 'none';
+            document.getElementById('alertContainer').innerHTML = '';
         }
 
         function downloadFile(filename, content) {
@@ -353,13 +494,33 @@ az deployment group create \\
             document.body.appendChild(element);
             element.click();
             document.body.removeChild(element);
+            
+            showAlert(`✅ Downloaded ${filename} successfully!`, 'success');
+        }
+
+        function copyCommand(commandId) {
+            const text = document.getElementById(commandId).textContent;
+            navigator.clipboard.writeText(text).then(() => {
+                // Show the copy success indicator
+                const successElement = document.getElementById(commandId + 'CopySuccess');
+                successElement.classList.add('show');
+                setTimeout(() => {
+                    successElement.classList.remove('show');
+                }, 2000);
+                
+                showAlert('✅ Command copied to clipboard!', 'success');
+            }).catch(err => {
+                console.error('Failed to copy: ', err);
+                showAlert('❌ Failed to copy command. Please copy manually.', 'error');
+            });
         }
 
         function copyToClipboard(text) {
             navigator.clipboard.writeText(text).then(() => {
-                alert('Command copied to clipboard!');
+                showAlert('✅ Copied to clipboard!', 'success');
             }).catch(err => {
                 console.error('Failed to copy: ', err);
+                showAlert('❌ Failed to copy. Please copy manually.', 'error');
             });
         }
 
