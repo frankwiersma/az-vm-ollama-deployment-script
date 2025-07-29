@@ -1,0 +1,94 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentParameters.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "location": {
+            "value": "westeurope"
+        },
+        "subnetName": {
+            "value": "your-subnet-name"
+        },
+        "virtualNetworkId": {
+            "value": "/subscriptions/YOUR-SUBSCRIPTION-ID/resourceGroups/YOUR-NETWORK-RG/providers/Microsoft.Network/virtualNetworks/YOUR-VNET-NAME"
+        },
+        "publicIpAddressName": {
+            "value": "ollama-vm-ip"
+        },
+        "publicIpAddressType": {
+            "value": "Static"
+        },
+        "publicIpAddressSku": {
+            "value": "Standard"
+        },
+        "virtualMachineName": {
+            "value": "ollama-vm"
+        },
+        "virtualMachineComputerName": {
+            "value": "ollama-vm"
+        },
+        "virtualMachineRG": {
+            "value": "your-resource-group-name"
+        },
+        "osDiskType": {
+            "value": "Premium_LRS"
+        },
+        "osDiskSizeGiB": {
+            "value": 128
+        },
+        "osDiskDeleteOption": {
+            "value": "Delete"
+        },
+        "virtualMachineSize": {
+            "value": "Standard_NV18ads_A10_v5"
+        },
+        "networkInterfaceName": {
+            "value": "ollama-vm-nic"
+        },
+        "enableAcceleratedNetworking": {
+            "value": true
+        },
+        "nicDeleteOption": {
+            "value": "Detach"
+        },
+        "hibernationEnabled": {
+            "value": false
+        },
+        "adminUsername": {
+            "value": "azureuser"
+        },
+        "adminPassword": {
+            "value": "YOUR-SECURE-PASSWORD-HERE"
+        },
+        "enablePeriodicAssessment": {
+            "value": "ImageDefault"
+        },
+        "patchMode": {
+            "value": "AutomaticByPlatform"
+        },
+        "rebootSetting": {
+            "value": "IfRequired"
+        },
+        "autoShutdownStatus": {
+            "value": "Enabled"
+        },
+        "autoShutdownTime": {
+            "value": "18:00"
+        },
+        "autoShutdownTimeZone": {
+            "value": "W. Europe Standard Time"
+        },
+        "autoShutdownNotificationStatus": {
+            "value": "Disabled"
+        },
+        "autoShutdownNotificationLocale": {
+            "value": "en"
+        },
+        "tags": {
+            "value": {
+                "Environment": "development",
+                "Project": "ollama-ai",
+                "Owner": "your-email@company.com"
+            }
+        }
+    }
+}
