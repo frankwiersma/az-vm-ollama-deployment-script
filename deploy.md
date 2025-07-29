@@ -49,18 +49,30 @@ Edit `parameters.json` with your specific values:
 {
   "virtualMachineName": {"value": "your-ollama-vm"},
   "virtualNetworkId": {"value": "/subscriptions/.../your-vnet"},
-  "subnetName": {"value": "your-subnet"},
-  "adminPassword": {"value": "your-secure-password"}
+  "subnetName": {"value": "your-subnet"}
 }
 ```
+**Note:** Admin password is provided via deployment command for security, not stored in parameters file.
 
-### 3. Deploy
+### 3. Create Resource Group (if needed)
 ```bash
+# Create a new resource group (skip if using existing)
+az group create \
+  --name your-resource-group \
+  --location westeurope
+```
+
+### 4. Deploy
+```bash
+# Deploy with password provided securely via command line
 az deployment group create \
   --resource-group your-resource-group \
   --template-file template.json \
-  --parameters @parameters.json
+  --parameters @parameters.json \
+  --parameters adminPassword="your-secure-password-here"
 ```
+
+**Security Note:** The admin password is provided via command line parameter rather than stored in the parameters file to prevent accidental exposure in version control.
 
 ## ⏱️ Deployment Timeline
 

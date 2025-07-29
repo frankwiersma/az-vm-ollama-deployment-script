@@ -39,12 +39,20 @@ The deployment creates an Azure VM with:
    cp template.example.json template.json
    ```
 
-4. **Deploy using Azure CLI:**
+4. **Create resource group (if needed):**
+   ```bash
+   az group create \
+     --name your-resource-group \
+     --location westeurope
+   ```
+
+5. **Deploy using Azure CLI:**
    ```bash
    az deployment group create \
      --resource-group your-resource-group \
      --template-file template.json \
-     --parameters @parameters.json
+     --parameters @parameters.json \
+     --parameters adminPassword="your-secure-password"
    ```
 
 ### Option 2: Manual Configuration
@@ -66,16 +74,27 @@ The deployment creates an Azure VM with:
    - `virtualNetworkId`: Your Azure VNet resource ID
    - `subnetName`: Your subnet name
    - `virtualMachineRG`: Your resource group name  
-   - `adminPassword`: A secure password
    - `tags`: Update with your organization's tags
+   
+   **Note:** Do NOT include `adminPassword` in the parameters file for security.
 
-4. **Deploy using Azure CLI:**
+4. **Create resource group (if needed):**
+   ```bash
+   az group create \
+     --name your-resource-group \
+     --location westeurope
+   ```
+
+5. **Deploy using Azure CLI:**
    ```bash
    az deployment group create \
      --resource-group your-resource-group \
      --template-file template.json \
-     --parameters @parameters.json
+     --parameters @parameters.json \
+     --parameters adminPassword="your-secure-password"
    ```
+   
+   **Security Best Practice:** Always provide the admin password via command line parameter rather than storing it in files.
 
 ## Files Description
 

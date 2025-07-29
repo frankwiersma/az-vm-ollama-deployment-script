@@ -247,9 +247,21 @@
             <div class="json-output" id="parametersOutput"></div>
             <button type="button" class="btn" onclick="downloadFile('parameters.json', document.getElementById('parametersOutput').textContent)">Download parameters.json</button>
             
-            <h4>Deployment Command</h4>
-            <div class="json-output" id="deployCommand"></div>
-            <button type="button" class="btn btn-secondary" onclick="copyToClipboard(document.getElementById('deployCommand').textContent)">Copy Command</button>
+            <h4>Deployment Instructions</h4>
+            <div class="deployment-instructions">
+                <h5>1. Create Resource Group (if needed)</h5>
+                <div class="json-output" id="createRgCommand"></div>
+                <button type="button" class="btn btn-secondary" onclick="copyToClipboard(document.getElementById('createRgCommand').textContent)">Copy Command</button>
+                
+                <h5>2. Deploy the VM</h5>
+                <div class="json-output" id="deployCommand"></div>
+                <button type="button" class="btn btn-secondary" onclick="copyToClipboard(document.getElementById('deployCommand').textContent)">Copy Command</button>
+                
+                <div class="help-text" style="margin-top: 15px; padding: 10px; background-color: #e3f2fd; border-left: 4px solid #2196f3;">
+                    <strong>Security Note:</strong> The admin password is provided directly in the deployment command for security. 
+                    It's not stored in the parameters file to prevent accidental commits of sensitive data.
+                </div>
+            </div>
         </div>
     </div>
 
@@ -286,7 +298,6 @@
                 nicDeleteOption: 'Detach',
                 hibernationEnabled: false,
                 adminUsername: formData.get('adminUsername'),
-                adminPassword: formData.get('adminPassword'),
                 enablePeriodicAssessment: 'ImageDefault',
                 patchMode: 'AutomaticByPlatform',
                 rebootSetting: 'IfRequired',
@@ -312,11 +323,19 @@
 
             document.getElementById('parametersOutput').textContent = JSON.stringify(parametersJson, null, 2);
             
-            const deployCmd = `az deployment group create \\
+            const createRgCmd = `# Create resource group (skip if it already exists)
+az group create \\
+  --name ${formData.get('resourceGroup')} \\
+  --location ${formData.get('location')}`;
+
+            const deployCmd = `# Deploy the Ollama VM (replace YOUR-SECURE-PASSWORD)
+az deployment group create \\
   --resource-group ${formData.get('resourceGroup')} \\
   --template-file template.json \\
-  --parameters @parameters.json`;
+  --parameters @parameters.json \\
+  --parameters adminPassword="YOUR-SECURE-PASSWORD"`;
             
+            document.getElementById('createRgCommand').textContent = createRgCmd;
             document.getElementById('deployCommand').textContent = deployCmd;
             document.getElementById('outputSection').style.display = 'block';
         }
